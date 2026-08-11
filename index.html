@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="8方位 Level 4">
+<link rel="manifest" href="manifest.webmanifest">
+<title>飛行場 8方位トレーニング Level 4</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;background:#f5f5f7}
+*{box-sizing:border-box}
+body{margin:0;min-height:100svh;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);display:flex;justify-content:center}
+.app{width:min(100%,520px);display:flex;flex-direction:column;gap:14px;padding:14px 0 24px}
+h1{font-size:24px;margin:4px 0 0;text-align:center}
+.level{text-align:center;font-size:14px;font-weight:700;color:#555;margin-top:-8px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.stat strong{display:block;font-size:20px}.stat span{font-size:12px;color:#666}
+.field{position:relative;width:100%;aspect-ratio:1/1;background:linear-gradient(#eaf4ff,#eef7ee);border-radius:22px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.10);border:1px solid rgba(0,0,0,.06)}
+.top-direction{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:4;font-size:34px;font-weight:900;line-height:1;background:rgba(255,255,255,.82);padding:6px 12px;border-radius:10px;min-width:86px;text-align:center}
+.guide-layer{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .12s ease}
+.answer-overlay{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .12s ease}
+.answer-overlay.visible{opacity:1}
+.guide-layer.visible{opacity:1}
+.guide-line{position:absolute;left:50%;top:50%;width:50%;height:0;border-top:2px dashed rgba(50,65,85,.42);transform-origin:left center}
+.sector-label{position:absolute;transform:translate(-50%,-50%);font-weight:800;font-size:13px;color:rgba(35,50,70,.76);background:rgba(255,255,255,.72);border-radius:8px;padding:2px 5px;white-space:nowrap}
+.aircraft,.airport{position:absolute;z-index:3;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;user-select:none;pointer-events:none}
+.aircraft{left:50%;top:50%;width:76px;height:76px;border-radius:50%;background:#fff;border:3px solid #2f5f9f;font-size:38px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.aircraft-symbol{display:inline-block;transform:rotate(-45deg);font-size:38px;line-height:1}
+.airport{
+  width:78px;
+  height:78px;
+  border-radius:50%;
+  background:transparent;
+  border:none;
+  box-shadow:0 2px 9px rgba(0,0,0,.16);
+  overflow:hidden;
+}
+.airport img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+}
+.prompt{text-align:center;font-size:18px;font-weight:700;min-height:28px}
+.feedback{min-height:28px;text-align:center;font-size:17px;font-weight:700}
+.answers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+button{appearance:none;border:none;border-radius:14px;background:#fff;color:#111;font-size:18px;font-weight:700;min-height:56px;box-shadow:0 1px 5px rgba(0,0,0,.10);touch-action:manipulation}
+button:active{transform:scale(.98)}button:disabled{opacity:.55}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.secondary{font-size:15px;min-height:48px;background:#e9e9ee}
+.correct{color:#147a32}.wrong{color:#b3261e}
+.hint{font-size:12px;color:#666;text-align:center;line-height:1.5}
+@media(max-width:390px){.answers{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main class="app">
+<h1>飛行場 8方位トレーニング</h1>
+<div class="level">LEVEL 4 — 自機中心・機首方位ヒント付き</div>
+
+<section class="stats">
+<div class="stat"><strong id="questions">0</strong><span>問題数</span></div>
+<div class="stat"><strong id="correct">0</strong><span>正解数</span></div>
+<div class="stat"><strong id="accuracy">0%</strong><span>正答率</span></div>
+<div class="stat"><strong id="avgTime">—</strong><span>平均回答時間</span></div>
+</section>
+
+<section class="field">
+<div class="guide-layer" id="guideLayer"></div>
+<svg class="answer-overlay" id="answerOverlay" aria-hidden="true"></svg>
+<div class="top-direction" id="topDirection">N</div>
+
+<div class="aircraft" title="自機"><span class="aircraft-symbol">✈️</span></div>
+
+<div class="airport" id="airport" title="飛行場"><img src="airport-icon.png" alt="滑走路と管制塔"></div>
+</section>
+
+<div class="prompt">自機は飛行場のどの方位にいる？</div>
+<div class="feedback" id="feedback"></div>
+
+<section class="answers" id="answers"></section>
+<section class="controls">
+<button class="secondary" id="nextBtn">次の問題</button>
+<button class="secondary" id="resetBtn">成績をリセット</button>
+</section>
+
+<div class="hint">
+中央が自機で、機首は常に画面の真上を向いています。画面上部には、機首方位を N / E / S / W、または 45° / 135° / 225° / 315° で表示します。飛行場の位置から、自機が飛行場のどの方位にいるかを答えてください。回答後に8方位の境界線と、飛行場から自機を貫通して正解方位へ伸びる赤い矢印を表示します。
+</div>
+</main>
+
+<script>
+const dirs=[
+ {key:'N',bearing:0},{key:'NE',bearing:45},{key:'E',bearing:90},{key:'SE',bearing:135},
+ {key:'S',bearing:180},{key:'SW',bearing:225},{key:'W',bearing:270},{key:'NW',bearing:315}
+];
+
+const field=document.querySelector('.field');
+const airport=document.getElementById('airport');
+const topDirection=document.getElementById('topDirection');
+const guideLayer=document.getElementById('guideLayer');
+const answerOverlay=document.getElementById('answerOverlay');
+const feedback=document.getElementById('feedback');
+const answers=document.getElementById('answers');
+const questionsEl=document.getElementById('questions');
+const correctEl=document.getElementById('correct');
+const accuracyEl=document.getElementById('accuracy');
+const avgTimeEl=document.getElementById('avgTime');
+const nextBtn=document.getElementById('nextBtn');
+const resetBtn=document.getElementById('resetBtn');
+
+let currentAnswer=null;
+let currentTopBearing=0;
+let airportXPct=50;
+let airportYPct=50;
+let answered=false;
+let pendingCardinal=null,pendingCardinalTimer=null;
+const CARDINAL_COMBO_DELAY=500;
+let questionStartedAt=performance.now();
+
+let stats=JSON.parse(localStorage.getItem('bearingGameStatsLevel4')||'{"questions":0,"correct":0,"totalResponseMs":0,"timedQuestions":0}');
+if(typeof stats.totalResponseMs!=='number')stats.totalResponseMs=0;
+if(typeof stats.timedQuestions!=='number')stats.timedQuestions=0;
+
+function norm(b){return((b%360)+360)%360}
+function headingDisplay(bearing){
+ switch(norm(bearing)){
+  case 0: return 'N';
+  case 45: return '45°';
+  case 90: return 'E';
+  case 135: return '135°';
+  case 180: return 'S';
+  case 225: return '225°';
+  case 270: return 'W';
+  case 315: return '315°';
+  default: return String(norm(bearing)) + '°';
+ }
+}
+function save(){localStorage.setItem('bearingGameStatsLevel4',JSON.stringify(stats))}
+function render(){
+ questionsEl.textContent=stats.questions;
+ correctEl.textContent=stats.correct;
+ accuracyEl.textContent=stats.questions?Math.round(stats.correct/stats.questions*100)+'%':'0%';
+ avgTimeEl.textContent=stats.timedQuestions?(stats.totalResponseMs/stats.timedQuestions/1000).toFixed(2)+'秒':'—';
+}
+function setDisabled(v){[...answers.querySelectorAll('button')].forEach(b=>b.disabled=v)}
+function clearPending(){if(pendingCardinalTimer)clearTimeout(pendingCardinalTimer);pendingCardinalTimer=null;pendingCardinal=null}
+
+
+function renderAnswerArrow(){
+ const rect=field.getBoundingClientRect();
+ const w=rect.width, h=rect.height;
+ answerOverlay.setAttribute('viewBox', `0 0 ${w} ${h}`);
+ answerOverlay.innerHTML = `
+  <defs>
+    <marker id="answerArrowHead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d93025"></path>
+    </marker>
+  </defs>
+ `;
+
+ const airportX = airportXPct / 100 * w;
+ const airportY = airportYPct / 100 * h;
+ const centerX = w / 2;
+ const centerY = h / 2;
+
+ let dx = centerX - airportX;
+ let dy = centerY - airportY;
+ const len = Math.hypot(dx, dy) || 1;
+ const ux = dx / len;
+ const uy = dy / len;
+
+ // 飛行場アイコンを避けて開始し、自機を貫通してその先まで延長する。
+ const startOffset = 42;
+ const x1 = airportX + ux * startOffset;
+ const y1 = airportY + uy * startOffset;
+
+ // 画面端の少し手前まで、中心を超えて矢印を伸ばす
+ const margin = 22;
+ const tCandidates = [];
+ if (ux > 0) tCandidates.push((w - margin - centerX) / ux);
+ if (ux < 0) tCandidates.push((margin - centerX) / ux);
+ if (uy > 0) tCandidates.push((h - margin - centerY) / uy);
+ if (uy < 0) tCandidates.push((margin - centerY) / uy);
+ const forwardCandidates = tCandidates.filter(t => t > 0);
+ const tMax = forwardCandidates.length ? Math.min(...forwardCandidates) : 0;
+
+ const x2 = centerX + ux * tMax;
+ const y2 = centerY + uy * tMax;
+
+ const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+ line.setAttribute('x1', x1);
+ line.setAttribute('y1', y1);
+ line.setAttribute('x2', x2);
+ line.setAttribute('y2', y2);
+ line.setAttribute('stroke', '#d93025');
+ line.setAttribute('stroke-width', '4');
+ line.setAttribute('stroke-linecap', 'round');
+ line.setAttribute('marker-end', 'url(#answerArrowHead)');
+ answerOverlay.appendChild(line);
+
+ // 正解ラベルは自機を越えた先、矢印の終端寄りに表示
+ const mx = centerX + (x2 - centerX) * 0.58;
+ const my = centerY + (y2 - centerY) * 0.58 - 14;
+ const label = currentAnswer ? currentAnswer.key : '';
+ const rectW = label.length === 1 ? 26 : 36;
+ const rectEl = document.createElementNS('http://www.w3.org/2000/svg','rect');
+ rectEl.setAttribute('x', mx - rectW / 2);
+ rectEl.setAttribute('y', my - 11);
+ rectEl.setAttribute('width', rectW);
+ rectEl.setAttribute('height', 20);
+ rectEl.setAttribute('rx', 8);
+ rectEl.setAttribute('fill', 'rgba(255,255,255,0.92)');
+ rectEl.setAttribute('stroke', '#d93025');
+ rectEl.setAttribute('stroke-width', '1.5');
+ answerOverlay.appendChild(rectEl);
+
+ const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+ text.setAttribute('x', mx);
+ text.setAttribute('y', my + 4);
+ text.setAttribute('text-anchor', 'middle');
+ text.setAttribute('font-size', '12');
+ text.setAttribute('font-weight', '800');
+ text.setAttribute('fill', '#d93025');
+ text.textContent = label;
+ answerOverlay.appendChild(text);
+}
+
+function buildGuides(){
+ guideLayer.innerHTML='';
+ for(let i=0;i<8;i++){
+   const trueBoundary=22.5+i*45;
+   const screenBearing=norm(trueBoundary-currentTopBearing);
+   const cssAngle=screenBearing-90;
+   const line=document.createElement('div');
+   line.className='guide-line';
+   line.style.transform=`rotate(${cssAngle}deg)`;
+   guideLayer.appendChild(line);
+ }
+ dirs.forEach(d=>{
+   const screenBearing=norm(d.bearing-currentTopBearing);
+   const rad=screenBearing*Math.PI/180,r=40;
+   const label=document.createElement('div');
+   label.className='sector-label';label.textContent=d.key;
+   label.style.left=`${50+Math.sin(rad)*r}%`;
+   label.style.top=`${50-Math.cos(rad)*r}%`;
+   guideLayer.appendChild(label);
+ });
+}
+
+function newQuestion(){
+ clearPending();answered=false;feedback.textContent='';feedback.className='feedback';setDisabled(false);guideLayer.classList.remove('visible');answerOverlay.classList.remove('visible');answerOverlay.innerHTML='';
+
+ currentTopBearing=dirs[Math.floor(Math.random()*8)].bearing;
+ topDirection.textContent=headingDisplay(currentTopBearing);
+
+ currentAnswer=dirs[Math.floor(Math.random()*8)];
+ const airportTrueBearing=norm(currentAnswer.bearing+180);
+ const airportScreenBearing=norm(airportTrueBearing-currentTopBearing);
+
+ const jitter=(Math.random()-.5)*20;
+ const displayScreenBearing=airportScreenBearing+jitter;
+ const rad=displayScreenBearing*Math.PI/180;
+ const radius=28+Math.random()*8;
+ airportXPct = 50 + Math.sin(rad) * radius;
+ airportYPct = 50 - Math.cos(rad) * radius;
+ airport.style.left=`${airportXPct}%`;
+ airport.style.top=`${airportYPct}%`;
+
+ buildGuides();
+ questionStartedAt=performance.now();
+}
+
+function answer(key,answeredAt=performance.now()){
+ clearPending();if(answered)return;answered=true;
+ const responseMs=Math.max(0,answeredAt-questionStartedAt);
+ stats.questions++;stats.totalResponseMs+=responseMs;stats.timedQuestions++;
+ if(key===currentAnswer.key){
+   stats.correct++;
+   feedback.textContent=`正解！ ${currentAnswer.key}（${(responseMs/1000).toFixed(2)}秒）`;
+   feedback.className='feedback correct';
+ }else{
+   feedback.textContent=`不正解。正解は ${currentAnswer.key} です。（${(responseMs/1000).toFixed(2)}秒）`;
+   feedback.className='feedback wrong';
+ }
+ guideLayer.classList.add('visible');
+ renderAnswerArrow();
+ answerOverlay.classList.add('visible');
+ save();render();setDisabled(true);
+}
+
+dirs.forEach(d=>{const b=document.createElement('button');b.textContent=d.key;b.addEventListener('click',()=>answer(d.key));answers.appendChild(b)});
+
+const instant={
+ Numpad7:'NW',Numpad8:'N',Numpad9:'NE',Numpad4:'W',Numpad6:'E',Numpad1:'SW',Numpad2:'S',Numpad3:'SE',
+ Digit7:'NW',Digit8:'N',Digit9:'NE',Digit4:'W',Digit6:'E',Digit1:'SW',Digit2:'S',Digit3:'SE'
+};
+const cardinal={KeyN:'N',KeyE:'E',KeyS:'S',KeyW:'W'};
+const diagonal={NE:'NE',EN:'NE',NW:'NW',WN:'NW',SE:'SE',ES:'SE',SW:'SW',WS:'SW'};
+
+function handleCardinal(dir,pressedAt=performance.now()){
+ if(answered)return;
+ if(!pendingCardinal){
+   pendingCardinal=dir;
+   pendingCardinalTimer=setTimeout(()=>{
+     const s=pendingCardinal;pendingCardinal=null;pendingCardinalTimer=null;
+     if(s)answer(s,pressedAt);
+   },CARDINAL_COMBO_DELAY);
+   return;
+ }
+ const first=pendingCardinal;clearPending();
+ const diag=diagonal[first+dir];
+ if(diag)answer(diag,pressedAt);
+ else if(first===dir)answer(dir,pressedAt);
+ else{
+   pendingCardinal=dir;
+   pendingCardinalTimer=setTimeout(()=>{
+     const s=pendingCardinal;pendingCardinal=null;pendingCardinalTimer=null;
+     if(s)answer(s,pressedAt);
+   },CARDINAL_COMBO_DELAY);
+ }
+}
+
+document.addEventListener('keydown',e=>{
+ if(e.repeat)return;
+ if(answered&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();newQuestion();return}
+ if(instant[e.code]){e.preventDefault();answer(instant[e.code],performance.now());return}
+ if(cardinal[e.code]){e.preventDefault();handleCardinal(cardinal[e.code],performance.now())}
+});
+
+nextBtn.addEventListener('click',newQuestion);
+resetBtn.addEventListener('click',()=>{
+ stats={questions:0,correct:0,totalResponseMs:0,timedQuestions:0};
+ save();render();newQuestion();
+});
+
+if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'))}
+
+window.addEventListener('resize',()=>{
+ if(answered){
+   renderAnswerArrow();
+ }
+});
+
+render();newQuestion();
+</script>
+</body>
+</html>

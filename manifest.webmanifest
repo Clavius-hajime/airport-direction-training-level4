@@ -1,0 +1,8 @@
+{
+  "name": "飛行場 8方位トレーニング Level 4",
+  "short_name": "8方位 L4",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#ffffff"
+}
