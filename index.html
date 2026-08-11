@@ -37,7 +37,7 @@ h1{font-size:24px;margin:4px 0 0;text-align:center}
 }
 
 .guide-layer{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .12s ease}
-.answer-overlay{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .12s ease}
+.answer-overlay{position:absolute;inset:0;z-index:10;pointer-events:none;opacity:0;transition:opacity .12s ease}
 .answer-overlay.visible{opacity:1}
 .guide-layer.visible{opacity:1}
 .guide-line{position:absolute;left:50%;top:50%;width:50%;height:0;border-top:2px dashed rgba(50,65,85,.42);transform-origin:left center}
@@ -107,7 +107,7 @@ button:active{transform:scale(.98)}button:disabled{opacity:.55}
 </section>
 
 <div class="hint">
-中央が自機で、機首は常に画面の真上を向いています。盤面の最上部には機首方位を N / E / S / W、または 45° / 135° / 225° / 315° で表示し、盤面上には N / E / S / W も常時表示します。飛行場の位置から、自機が飛行場のどの方位にいるかを答えてください。回答後に8方位の境界線と、飛行場から自機を貫通して正解方位へ伸びる赤い矢印を表示します。
+中央が自機で、機首は常に画面の真上を向いています。盤面の最上部には機首方位を N / E / S / W、または 45° / 135° / 225° / 315° で表示し、盤面上には N / E / S / W も常時表示します。飛行場の位置から、自機が飛行場のどの方位にいるかを答えてください。回答後に8方位の境界線と、飛行場から自機を貫通して正解方位へ伸びる赤い矢印を最前面に表示します。
 </div>
 </main>
 
