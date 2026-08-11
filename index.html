@@ -20,7 +20,7 @@ h1{font-size:24px;margin:4px 0 0;text-align:center}
 .stat{background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .stat strong{display:block;font-size:20px}.stat span{font-size:12px;color:#666}
 .field{position:relative;width:100%;aspect-ratio:1/1;background:linear-gradient(#eaf4ff,#eef7ee);border-radius:22px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.10);border:1px solid rgba(0,0,0,.06)}
-.top-direction{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:4;font-size:34px;font-weight:900;line-height:1;background:rgba(255,255,255,.82);padding:6px 12px;border-radius:10px;min-width:86px;text-align:center}
+.top-direction{display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;line-height:1;background:#fff;padding:8px 14px;border-radius:12px;min-width:86px;text-align:center;box-shadow:0 1px 5px rgba(0,0,0,.10);margin:0 auto}
 
 .cardinal-marker{
   position:absolute;
@@ -83,10 +83,10 @@ button:active{transform:scale(.98)}button:disabled{opacity:.55}
 <div class="stat"><strong id="avgTime">—</strong><span>平均回答時間</span></div>
 </section>
 
+<div class="top-direction" id="topDirection">N</div>
 <section class="field">
 <div class="guide-layer" id="guideLayer"></div>
 <svg class="answer-overlay" id="answerOverlay" aria-hidden="true"></svg>
-<div class="top-direction" id="topDirection">N</div>
 <div class="cardinal-marker" id="markN">N</div>
 <div class="cardinal-marker" id="markE">E</div>
 <div class="cardinal-marker" id="markS">S</div>
@@ -107,7 +107,7 @@ button:active{transform:scale(.98)}button:disabled{opacity:.55}
 </section>
 
 <div class="hint">
-中央が自機で、機首は常に画面の真上を向いています。画面上部には機首方位を N / E / S / W、または 45° / 135° / 225° / 315° で表示し、盤面上には N / E / S / W も常時表示します。飛行場の位置から、自機が飛行場のどの方位にいるかを答えてください。回答後に8方位の境界線と、飛行場から自機を貫通して正解方位へ伸びる赤い矢印を表示します。
+中央が自機で、機首は常に画面の真上を向いています。盤面の上には機首方位を N / E / S / W、または 45° / 135° / 225° / 315° で表示し、盤面上には N / E / S / W も常時表示します。飛行場の位置から、自機が飛行場のどの方位にいるかを答えてください。回答後に8方位の境界線と、飛行場から自機を貫通して正解方位へ伸びる赤い矢印を表示します。
 </div>
 </main>
 
