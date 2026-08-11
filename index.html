@@ -21,6 +21,21 @@ h1{font-size:24px;margin:4px 0 0;text-align:center}
 .stat strong{display:block;font-size:20px}.stat span{font-size:12px;color:#666}
 .field{position:relative;width:100%;aspect-ratio:1/1;background:linear-gradient(#eaf4ff,#eef7ee);border-radius:22px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.10);border:1px solid rgba(0,0,0,.06)}
 .top-direction{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:4;font-size:34px;font-weight:900;line-height:1;background:rgba(255,255,255,.82);padding:6px 12px;border-radius:10px;min-width:86px;text-align:center}
+
+.cardinal-marker{
+  position:absolute;
+  z-index:4;
+  transform:translate(-50%,-50%);
+  font-size:22px;
+  font-weight:900;
+  color:#3f4b5a;
+  background:rgba(255,255,255,.76);
+  padding:3px 7px;
+  border-radius:8px;
+  pointer-events:none;
+  user-select:none;
+}
+
 .guide-layer{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .12s ease}
 .answer-overlay{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .12s ease}
 .answer-overlay.visible{opacity:1}
@@ -59,7 +74,7 @@ button:active{transform:scale(.98)}button:disabled{opacity:.55}
 <body>
 <main class="app">
 <h1>飛行場 8方位トレーニング</h1>
-<div class="level">LEVEL 4 — 自機中心・機首方位ヒント付き</div>
+<div class="level">LEVEL 4 — 自機中心・DG方位ヒント付き</div>
 
 <section class="stats">
 <div class="stat"><strong id="questions">0</strong><span>問題数</span></div>
@@ -72,6 +87,10 @@ button:active{transform:scale(.98)}button:disabled{opacity:.55}
 <div class="guide-layer" id="guideLayer"></div>
 <svg class="answer-overlay" id="answerOverlay" aria-hidden="true"></svg>
 <div class="top-direction" id="topDirection">N</div>
+<div class="cardinal-marker" id="markN">N</div>
+<div class="cardinal-marker" id="markE">E</div>
+<div class="cardinal-marker" id="markS">S</div>
+<div class="cardinal-marker" id="markW">W</div>
 
 <div class="aircraft" title="自機"><span class="aircraft-symbol">✈️</span></div>
 
@@ -88,7 +107,7 @@ button:active{transform:scale(.98)}button:disabled{opacity:.55}
 </section>
 
 <div class="hint">
-中央が自機で、機首は常に画面の真上を向いています。画面上部には、機首方位を N / E / S / W、または 45° / 135° / 225° / 315° で表示します。飛行場の位置から、自機が飛行場のどの方位にいるかを答えてください。回答後に8方位の境界線と、飛行場から自機を貫通して正解方位へ伸びる赤い矢印を表示します。
+中央が自機で、機首は常に画面の真上を向いています。画面上部には機首方位を N / E / S / W、または 45° / 135° / 225° / 315° で表示し、盤面上には N / E / S / W も常時表示します。飛行場の位置から、自機が飛行場のどの方位にいるかを答えてください。回答後に8方位の境界線と、飛行場から自機を貫通して正解方位へ伸びる赤い矢印を表示します。
 </div>
 </main>
 
@@ -101,6 +120,10 @@ const dirs=[
 const field=document.querySelector('.field');
 const airport=document.getElementById('airport');
 const topDirection=document.getElementById('topDirection');
+const markN=document.getElementById('markN');
+const markE=document.getElementById('markE');
+const markS=document.getElementById('markS');
+const markW=document.getElementById('markW');
 const guideLayer=document.getElementById('guideLayer');
 const answerOverlay=document.getElementById('answerOverlay');
 const feedback=document.getElementById('feedback');
@@ -138,6 +161,21 @@ function headingDisplay(bearing){
   case 315: return '315°';
   default: return String(norm(bearing)) + '°';
  }
+}
+
+function positionCardinalMarkers(){
+ const cardinalBearings={N:0,E:90,S:180,W:270};
+ const markers={N:markN,E:markE,S:markS,W:markW};
+ const r=43;
+
+ Object.entries(cardinalBearings).forEach(([key,trueBearing])=>{
+   const screenBearing=norm(trueBearing-currentTopBearing);
+   const rad=screenBearing*Math.PI/180;
+   const x=50+Math.sin(rad)*r;
+   const y=50-Math.cos(rad)*r;
+   markers[key].style.left=`${x}%`;
+   markers[key].style.top=`${y}%`;
+ });
 }
 function save(){localStorage.setItem('bearingGameStatsLevel4',JSON.stringify(stats))}
 function render(){
@@ -256,6 +294,7 @@ function newQuestion(){
 
  currentTopBearing=dirs[Math.floor(Math.random()*8)].bearing;
  topDirection.textContent=headingDisplay(currentTopBearing);
+ positionCardinalMarkers();
 
  currentAnswer=dirs[Math.floor(Math.random()*8)];
  const airportTrueBearing=norm(currentAnswer.bearing+180);
